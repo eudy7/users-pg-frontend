@@ -1,88 +1,159 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lista de Usuarios</title>
+  <title>Consumo de REST–API de Usuarios</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="callrestapi.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
-      background-color: #d0f0f7; /* Fondo celeste claro */
+      background-color: #f6f7f9;
+      color: #222;
+      padding: 40px;
+      max-width: 800px;
+      margin: auto;
     }
-    h1, h2 {
-      color: #333;
-      text-align: center;
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: #1a1a1a;
     }
-    .form-container, .list-container {
-      background-color: #ffffff;
-      padding: 20px;
-      margin: 20px auto;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      max-width: 600px;
+
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
     }
+
     input[type="text"], input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #eef3ff;
+    }
+
+    button {
+      margin-top: 20px;
+      margin-right: 10px;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #postBtn {
+      background-color: #007bff;
+      color: white;
+    }
+
+    #getBtn {
+      background-color: #6c757d;
+      color: white;
+    }
+
+    table {
+      width: 100%;
+      margin-top: 30px;
+      border-collapse: collapse;
+      background-color: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #eaeaea;
+    }
+
+    th {
+      background-color: #f4f4f4;
+    }
+
+    tr:hover {
+      background-color: #f1f9ff;
+    }
+
+    #editModal {
+      display: none;
+      position: fixed;
+      top: 10%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      z-index: 999;
+      width: 400px;
+    }
+
+    #editModal input[type="text"],
+    #editModal input[type="email"],
+    #editModal input[type="number"] {
+      margin-bottom: 10px;
+      width: 100%;
       padding: 8px;
-      margin: 5px 5px 10px 0;
-      width: calc(50% - 12px);
-      box-sizing: border-box;
       border: 1px solid #ccc;
       border-radius: 4px;
     }
-    button {
-      padding: 10px 16px;
-      margin: 5px;
-      background-color: #007BFF;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
-    ul {
-      list-style-type: none;
-      padding: 0;
-    }
-    li {
-      background-color: #ffffff;
-      margin: 8px 0;
-      padding: 10px;
-      border-bottom: 1px solid #ddd;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .user-info {
-      flex-grow: 1;
-      color: #333;
+
+    #editModal button {
+      margin-top: 10px;
     }
   </style>
-  <script src="callrestapi.js" defer></script>
 </head>
 <body>
 
-  <h1>Lista de Usuarios</h1>
+  <h1>Consumo de REST–API de Usuarios</h1>
 
-  <div class="form-container">
-    <h2>Agregar Usuario</h2>
-    <input type="text" id="name" placeholder="Nombre">
-    <input type="text" id="email" placeholder="Email">
-    <input type="number" id="age" placeholder="Edad">
-    <input type="text" id="comments" placeholder="Comentarios">
+  <label for="name">Name</label>
+  <input type="text" id="name">
+
+  <label for="email">Email</label>
+  <input type="text" id="email">
+
+  <label for="age">Age</label>
+  <input type="number" id="age">
+
+  <label for="comments">Comments</label>
+  <input type="text" id="comments">
+
+  <button id="postBtn" onclick="postUser()">POST user</button>
+  <button id="getBtn" onclick="getUsers()">GET usuarios</button>
+
+  <div id="resultado"></div>
+
+  <div id="editModal">
+    <h2>Editar Usuario</h2>
+    <input type="hidden" id="edit-id">
+
+    <label for="edit-name">Name</label>
+    <input type="text" id="edit-name">
+
+    <label for="edit-email">Email</label>
+    <input type="text" id="edit-email">
+
+    <label for="edit-age">Age</label>
+    <input type="number" id="edit-age">
+
+    <label for="edit-comments">Comments</label>
+    <input type="text" id="edit-comments">
+
     <br>
-    <button onclick="createUser()">POST user</button>
-    <button onclick="getUsers()">GET users</button>
+    <button onclick="updateUser()">Guardar cambios</button>
+    <button onclick="$('#editModal').hide()">Cancelar</button>
   </div>
 
-  <div class="list-container">
-    <ul id="userList">
-      <!-- Lista de usuarios aparecerá aquí -->
-    </ul>
-  </div>
+  <script>
+    $(document).ready(function () {
+      getUsers();
+    });
+  </script>
 
 </body>
 </html>
